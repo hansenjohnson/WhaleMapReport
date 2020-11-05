@@ -51,8 +51,8 @@ server = function(input, output) {
     content = function(file) {
       
       # Copy the report file to a temporary directory before processing it
-      tempReport <- file.path(tempdir(), basename(template_file))
-      file.copy(template_file, tempReport, overwrite = TRUE)
+      # tempReport <- file.path(tempdir(), basename(template_file))
+      # file.copy(template_file, tempReport, overwrite = TRUE)
       
       # # extract date limits from inputs
       # t2 = as.Date(input$date)
@@ -65,7 +65,7 @@ server = function(input, output) {
       #   subset_canadian()
       obs = data.frame(lat = rnorm(1,10,1))
       
-      write_csv(obs,file)
+      write.csv(obs,file)
       # trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% 
       #   dplyr::filter(date >= t1 & date <= t2) %>% 
       #   subset_canadian()
