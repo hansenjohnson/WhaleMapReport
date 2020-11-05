@@ -59,16 +59,16 @@ server = function(input, output) {
       t1 = t2-as.numeric(input$type)
       
       # read and subset data
-      obs = readRDS(normalizePath('../WhaleMap/data/processed/observations.rds')) %>%
+      obs = readRDS(normalizePath('data/observations.rds')) %>%
         dplyr::filter(date >= t1 & date <= t2) %>%
         dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
         subset_canadian()
       
-      write.csv(obs,file)
-      # trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% 
-      #   dplyr::filter(date >= t1 & date <= t2) %>% 
+      write.csv(obs,file,row.names = FALSE)
+      # trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>%
+      #   dplyr::filter(date >= t1 & date <= t2) %>%
       #   subset_canadian()
-      # 
+      
       # # render report
       # rmarkdown::render(input = tempReport, 
       #                   output_file = file,
