@@ -33,6 +33,11 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
 
 server = function(input, output) {
   
+  # read in data
+  obs = readRDS('../WhaleMap/data/processed/observations.rds')
+  trk = readRDS('../WhaleMap/data/processed/tracks.rds')
+  
+  # check password
   observeEvent(input$check, {
     
     if(input$password == password){
@@ -44,6 +49,7 @@ server = function(input, output) {
     
   })
   
+  # download
   output$report <- downloadHandler(
     # For PDF output, change this to "report.pdf"
     # filename = "report.pdf",
@@ -59,7 +65,7 @@ server = function(input, output) {
       t1 = t2-as.numeric(input$type)
       
       # read and subset data
-      obs = readRDS(normalizePath('data/observations.rds')) %>%
+      obs = obs %>%
         dplyr::filter(date >= t1 & date <= t2) %>%
         dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
         subset_canadian()
