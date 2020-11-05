@@ -59,7 +59,7 @@ server = function(input, output) {
       t1 = t2-as.numeric(input$type)
       
       # read and subset data
-      obs = readRDS('../WhaleMap/data/processed/observations.rds') %>%
+      obs = readRDS(normalizePath('../WhaleMap/data/processed/observations.rds')) %>%
         dplyr::filter(date >= t1 & date <= t2) %>%
         dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
         subset_canadian()
