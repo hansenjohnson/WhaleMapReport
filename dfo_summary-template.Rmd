@@ -1,0 +1,207 @@
+---
+output: pdf_document
+params:
+  t1: !r Sys.Date()-1
+  t2: !r Sys.Date()-1
+  obs: !r data.frame()
+  trk: !r data.frame()
+---
+
+```{r setup, echo=FALSE}
+
+# libraries
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(rnaturalearth))
+
+# define species color palette
+obs_pal = c('right' = 'red',
+             'fin' = 'blue',
+             'sei' = 'lightgray', 
+             'humpback' = 'green', 
+             'blue' = 'darkslategrey')
+
+# define track color palette
+trk_pal = c(
+  'buoy' = 'darkslategrey',
+  'slocum' = 'blue',
+  'plane' = '#8B6914',
+  'vessel' = 'black',
+  'rpas' = 'purple')
+
+# rename inputs
+t1 = params$t1
+t2 = params$t2
+obs = params$obs
+trk = params$trk
+
+# create data to/from message
+if(t1 == t2){
+  data_range = t1
+} else {
+  data_range = paste0(t1, ' to ', t2)
+}
+
+```
+
+\begin{center}
+	\huge \textbf{WhaleMap Summary Report} \\
+	\huge \textbf{`r data_range`} \\
+	\bigskip
+	\large 
+	\textbf{Report generated on:} `r Sys.time()`\\
+	\textbf{Produced by Dalhousie MEOPAR-WHaLE project and DFO Science - Maritimes Region} \\
+\end{center}
+
+\hrulefill
+
+#### Figure 1: Locations of large whale observations
+
+```{r map, echo=FALSE, warning=FALSE, fig.height=8, fig.align='center'}
+
+# combine all lat/lon to help determine plot limits
+inLat = range(c(obs$lat, trk$lat),na.rm = TRUE)
+inLon = range(c(obs$lon, trk$lon),na.rm = TRUE)
+
+# get basemap data
+bg = ne_countries(scale = "medium", continent = 'north america', returnclass = "sf")
+
+# make map
+map = ggplot()+
+  geom_sf(data = bg)+
+  coord_sf(xlim = c(-68,-51), ylim = c(41,52), expand = FALSE, )+
+  # coord_sf(xlim = c(-68,-51), ylim = c(41,52), expand = FALSE)+
+  geom_path(data = trk, aes(x = lon, y = lat, group = id, color = platform),
+            alpha = 0.75, size = 0.3)+
+  scale_color_manual(values = trk_pal)+
+  geom_point(data = obs, aes(x = lon, y = lat, fill = species, size = species), 
+             shape = 21, color = 'black', alpha = 0.7)+
+  geom_point(data = filter(obs,species == 'right'), aes(x = lon, y = lat, fill = species, size = species), 
+             shape = 21, color = 'black', alpha = 0.7)+
+  scale_fill_manual(values = obs_pal)+
+  scale_size_manual(values = c('right' = 3, 'fin' = 2, 'sei' = 2, 'blue' = 2, 'humpback' = 2))+
+  labs(x=NULL,y=NULL,fill='Species:',size='Species:', color='Platform:')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), 
+        legend.position = 'bottom', 
+        legend.box = 'vertical', 
+        legend.key.height = unit(0.01,'cm'), 
+        legend.spacing.y = unit(0.01,'cm'))
+
+# show map
+if(length(inLon)!=0){
+  map
+} 
+```
+
+```{r map_text, echo=FALSE, results='asis'}
+
+# show map text
+if(length(inLon)!=0){
+  cat('For interactive map, go to: https://whalemap.org/WhaleMap/ \n')
+  cat('\\clearpage \n')
+} else {
+  cat('*No effort or observations were recorded during this period*')
+}
+
+```
+
+#### Table 1: Number of large whale observations
+
+```{r spp_table, echo=FALSE, results='asis'}
+
+# count numbers of all species sighted
+vis = obs[obs$score=='definite visual',]
+vis = obs[!is.na(obs$number),]
+
+if(nrow(vis)!=0){
+  vis = aggregate(number ~ species, data = vis, FUN = sum)
+} else {
+  vis = data.frame(species = levels(obs$species), number = rep(0, length(levels(obs$species))))
+}
+
+# count acoustic detections
+aco = as.data.frame(table(obs$species[obs$score=='definite acoustic']))
+
+# merge sightings and acoustics
+spp_table = merge(vis, aco, by.x = 'species', by.y = 'Var1', all.y = TRUE)
+
+# rename columns
+colnames(spp_table) = c('species', 'visual_counts', 'acoustic_detections')
+
+# replace zeros
+spp_table$visual_counts[is.na(spp_table$visual_counts)] = 0
+
+# sort table alphabetically
+spp_table=spp_table[order(as.character(spp_table$species), decreasing = FALSE),]
+
+# display table
+kable(spp_table, row.names = FALSE, align = 'c')  
+
+```
+
+*Visual counts only include sightings where numbers of whales were recorded, and may include duplicates*
+
+#### Table 2. Platforms with recorded survey effort
+
+```{r effort, echo=FALSE, results='asis'}
+
+# display table or message
+if(nrow(trk)==0){
+  cat('*No platforms recorded effort during this period*')
+} else {
+  platform_table = aggregate(platform ~ name, data = trk, FUN = unique)
+  kable(platform_table, row.names = FALSE, align = 'c')
+}
+
+```
+
+#### Table 3: North Atlantic right whale sightings
+
+```{r narw_sig, echo=FALSE, results='asis'}
+
+# select species
+sig = obs[obs$species == 'right' & obs$score == 'definite visual',]
+
+# format table
+sig = sig[,c('date','time', 'lat', 'lon', 'number', 'calves', 'platform', 'name')]
+
+# sort by time
+sig = sig[order(sig$time),]
+
+# format timestamps
+sig$time = format(sig$time, '%H:%M:%S')
+
+# display table or message
+if(nrow(sig)==0){
+  cat('*No right whales were sighted*')
+} else {
+  kable(sig, row.names = FALSE, align = 'c')  
+}
+
+```
+
+#### Table 4: North Atlantic right whale acoustic detections
+
+```{r narw_det, echo=FALSE, results='asis'}
+
+# select species
+det = obs[obs$species == 'right' & obs$score == 'definite acoustic',]
+
+# format table
+det = det[,c('date','time', 'lat', 'lon', 'platform', 'name')]
+
+# sort by time
+det = det[order(det$time),]
+
+# format timestamps
+det$time = format(det$time, '%H:%M:%S')
+
+# display table or message
+if(nrow(det)==0){
+  cat('*No right whales were acoustically detected*')
+} else {
+  kable(det, row.names = FALSE, align = 'c')  
+}
+
+```

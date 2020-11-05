@@ -1,0 +1,11 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# system
+.DS_Store
+
+# files
+password.rda
