@@ -46,7 +46,8 @@ server = function(input, output) {
   
   output$report <- downloadHandler(
     # For PDF output, change this to "report.pdf"
-    filename = "report.pdf",
+    # filename = "report.pdf",
+    filename = "report.csv",
     content = function(file) {
       
       # Copy the report file to a temporary directory before processing it
@@ -62,19 +63,21 @@ server = function(input, output) {
         dplyr::filter(date >= t1 & date <= t2) %>%
         dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>% 
         subset_canadian()
-      trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% 
-        dplyr::filter(date >= t1 & date <= t2) %>% 
-        subset_canadian()
       
-      # render report
-      rmarkdown::render(input = tempReport, 
-                        output_file = file,
-                        params = list(
-                          t1 = t1,
-                          t2 = t2,
-                          obs = obs,
-                          trk = trk),
-                        envir = new.env(parent = globalenv()))
+      write_csv(obs,file)
+      # trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% 
+      #   dplyr::filter(date >= t1 & date <= t2) %>% 
+      #   subset_canadian()
+      # 
+      # # render report
+      # rmarkdown::render(input = tempReport, 
+      #                   output_file = file,
+      #                   params = list(
+      #                     t1 = t1,
+      #                     t2 = t2,
+      #                     obs = obs,
+      #                     trk = trk),
+      #                   envir = new.env(parent = globalenv()))
     }
   )
 }
