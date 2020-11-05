@@ -54,15 +54,16 @@ server = function(input, output) {
       tempReport <- file.path(tempdir(), basename(template_file))
       file.copy(template_file, tempReport, overwrite = TRUE)
       
-      # extract date limits from inputs
-      t2 = as.Date(input$date)
-      t1 = t2-as.numeric(input$type)
-      
-      # read and subset data
-      obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% 
-        dplyr::filter(date >= t1 & date <= t2) %>%
-        dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>% 
-        subset_canadian()
+      # # extract date limits from inputs
+      # t2 = as.Date(input$date)
+      # t1 = t2-as.numeric(input$type)
+      # 
+      # # read and subset data
+      # obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% 
+      #   dplyr::filter(date >= t1 & date <= t2) %>%
+      #   dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>% 
+      #   subset_canadian()
+      obs = data.frame(lat = rnorm(1,10,1))
       
       write_csv(obs,file)
       # trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% 
