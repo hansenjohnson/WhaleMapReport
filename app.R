@@ -15,6 +15,10 @@ source(normalizePath('functions.R'))
 # read in password
 load('password.rda')
 
+# read in data
+obs = readRDS('../WhaleMap/data/processed/observations.rds')
+trk = readRDS('../WhaleMap/data/processed/tracks.rds')
+
 # app ---------------------------------------------------------------------
 
 ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
@@ -32,10 +36,6 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
 )
 
 server = function(input, output) {
-  
-  # read in data
-  obs = readRDS('../WhaleMap/data/processed/observations.rds')
-  trk = readRDS('../WhaleMap/data/processed/tracks.rds')
   
   # check password
   observeEvent(input$check, {
