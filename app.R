@@ -37,7 +37,8 @@ server = function(input, output) {
   
   # render report and download
   output$download <- downloadHandler(
-    filename = paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.pdf'),
+    filename = function(){
+      paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.pdf')},
     content = function(file) {
       
       # define report duration
@@ -59,8 +60,12 @@ server = function(input, output) {
         dplyr::filter(date >= t1 & date <= t2) %>%
         subset_canadian()
       
+      # copy template to a temporary directory to avoid permissions issues 
+      tempReport = file.path(tempdir(), template_file)
+      file.copy(template_file, tempReport, overwrite = TRUE)
+      
       # render report
-      rmarkdown::render(input = template_file,
+      rmarkdown::render(input = tempReport,
                         output_file = file,
                         params = list(
                           t1 = t1,
