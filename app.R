@@ -71,8 +71,7 @@ server = function(input, output) {
                           t1 = t1,
                           t2 = t2,
                           obs = obs,
-                          trk = trk),
-                        envir = new.env(parent = globalenv()))
+                          trk = trk))
     }
   )
   
