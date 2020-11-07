@@ -7,17 +7,13 @@ library(shiny)
 library(tidyverse)
 
 # path to report template file (`dfo_summary-template.Rmd`)
-template_file = normalizePath("dfo_summary-template.Rmd")
+template_file = "dfo_summary-template.Rmd"
 
 # read in source code
-source(normalizePath('functions.R'))
+source('functions.R')
 
 # read in password
 load('password.rda')
-
-# read in data
-obs = readRDS('../WhaleMap/data/processed/observations.rds')
-trk = readRDS('../WhaleMap/data/processed/tracks.rds')
 
 # app ---------------------------------------------------------------------
 
@@ -27,7 +23,7 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
                          value = Sys.Date()-1),
                selectInput("type", 
                            label = 'Choose report type:', 
-                           choices = c('daily' = 0, 'daily-extended' = 3, 'weekly' = 6), 
+                           choices = c('daily', 'daily-extended', 'weekly'), 
                            selected = 'daily',
                            multiple = FALSE),
                passwordInput("password", "Password:"),
@@ -36,6 +32,11 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
 )
 
 server = function(input, output) {
+  
+  # read in data
+  min_date = Sys.Date()-365
+  obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% filter(date>=min_date)
+  trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% filter(date>=min_date)
   
   # check password
   observeEvent(input$check, {
@@ -52,17 +53,20 @@ server = function(input, output) {
   # download
   output$report <- downloadHandler(
     # For PDF output, change this to "report.pdf"
-    # filename = "report.pdf",
-    filename = "report.csv",
+    # filename = "report.csv",
+    filename = paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.csv'),
+    
     content = function(file) {
       
-      # Copy the report file to a temporary directory before processing it
-      # tempReport <- file.path(tempdir(), basename(template_file))
-      # file.copy(template_file, tempReport, overwrite = TRUE)
+      # define report duration
+      d = switch(input$type,
+                 'daily' = 0, 
+                 'daily-extended' = 3,
+                 'weekly' = 6)
       
-      # # extract date limits from inputs
+      # define date limits
       t2 = as.Date(input$date)
-      t1 = t2-as.numeric(input$type)
+      t1 = t2-d
       
       # read and subset data
       obs = obs %>%
