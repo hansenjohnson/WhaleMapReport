@@ -28,27 +28,28 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
                            multiple = FALSE),
                passwordInput("password", "Password:"),
                actionButton("check", 'Check password'),
-               uiOutput("download")
+               # uiOutput("download")
+               downloadButton("report", "Download report")
 )
 
 server = function(input, output) {
   
   # read in data
-  min_date = Sys.Date()-365
+  min_date = Sys.Date()-6
   obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% filter(date>=min_date)
   trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% filter(date>=min_date)
   
-  # check password
-  observeEvent(input$check, {
-    
-    if(input$password == password){
-      showNotification('Password correct! You may now download the report :)', type = 'message')
-      output$download <- renderUI({downloadButton("report", "Download report")})
-    } else {
-      showNotification('Incorrect password. Please contact hansen.johnson@dal.ca for access', type = 'warning')
-    }
-    
-  })
+  # # check password
+  # observeEvent(input$check, {
+  #   
+  #   if(input$password == password){
+  #     showNotification('Password correct! You may now download the report :)', type = 'message')
+  #     output$download <- renderUI({downloadButton("report", "Download report")})
+  #   } else {
+  #     showNotification('Incorrect password. Please contact hansen.johnson@dal.ca for access', type = 'warning')
+  #   }
+  #   
+  # })
   
   # download
   output$report <- downloadHandler(
