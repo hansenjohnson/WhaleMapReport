@@ -33,7 +33,7 @@ ui = fluidPage(
   shinyjs::hidden(downloadButton("download","Download report"))
 )
 
-server = function(input, output) {
+server = function(input, output, session) {
   
   # render report and download
   output$download <- downloadHandler(
