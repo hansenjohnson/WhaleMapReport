@@ -35,47 +35,52 @@ ui = fluidPage(
 
 server = function(input, output, session) {
   
-  # render report and download
-  observe({
-    output$download <- downloadHandler(
-      filename = function(){
-        paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.pdf')},
-      content = function(file) {
-        
-        # define report duration
-        d = switch(input$type,
-                   'daily' = 0, 
-                   'daily-extended' = 3,
-                   'weekly' = 6)
-        
-        # define date limits
-        t2 = as.Date(input$date)
-        t1 = t2-d
-        
-        # read and subset data
-        obs = readRDS('../WhaleMap/data/processed/observations.rds') %>%
-          dplyr::filter(date >= t1 & date <= t2) %>%
-          dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
-          subset_canadian()
-        trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>%
-          dplyr::filter(date >= t1 & date <= t2) %>%
-          subset_canadian()
-        
-        # copy template to a temporary directory to avoid permissions issues 
-        tempReport = file.path(tempdir(), template_file)
-        file.copy(template_file, tempReport, overwrite = TRUE)
-        
-        # render report
-        rmarkdown::render(input = tempReport,
-                          output_file = file,
-                          params = list(
-                            t1 = t1,
-                            t2 = t2,
-                            obs = obs,
-                            trk = trk))
-      }
-    )
+  # read in dataset
+  min_date = Sys.Date()-365
+  obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% filter(date>=min_date)
+  trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% filter(date>=min_date)
+  
+  # get report data
+  params = reactive({
+    # define report duration
+    d = switch(input$type,
+               'daily' = 0, 
+               'daily-extended' = 3,
+               'weekly' = 6)
+    
+    # define date limits
+    t2 = as.Date(input$date)
+    t1 = t2-d
+    
+    # read and subset data
+    obs = obs %>%
+      dplyr::filter(date >= t1 & date <= t2) %>%
+      dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
+      subset_canadian()
+    trk = trk %>%
+      dplyr::filter(date >= t1 & date <= t2) %>%
+      subset_canadian()
+    
+    # define params list
+    list(t1=t1,t2=t2,obs=obs,trk=trk)
   })
+  
+  # render report and download
+  output$download <- downloadHandler(
+    filename = function(){
+      paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.pdf')},
+    content = function(file) {
+      
+      # copy template to a temporary directory to avoid permissions issues 
+      tempReport = file.path(tempdir(), template_file)
+      file.copy(template_file, tempReport, overwrite = TRUE)
+      
+      # render report
+      rmarkdown::render(input = tempReport,
+                        output_file = file,
+                        params = params())
+    }
+  )
   
   # enable/disable download based on password
   observeEvent(input$password, {
