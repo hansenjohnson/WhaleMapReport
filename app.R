@@ -29,7 +29,7 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
                passwordInput("password", "Password:"),
                actionButton("check", 'Check password'),
                # uiOutput("download")
-               downloadButton("report", "Download report")
+               # downloadButton("report", "Download report")
 )
 
 server = function(input, output) {
