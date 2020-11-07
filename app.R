@@ -65,26 +65,28 @@ server = function(input, output, session) {
     list(t1=t1,t2=t2,obs=obs,trk=trk)
   })
   
-  # render report and download
-  output$download <- downloadHandler(
-    filename = function(){
-      paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.pdf')},
-    content = function(file) {
-      
-      # copy template to a temporary directory to avoid permissions issues 
-      tempReport = file.path(tempdir(), template_file)
-      file.copy(template_file, tempReport, overwrite = TRUE)
-      
-      # render report
-      rmarkdown::render(input = tempReport,
-                        output_file = file,
-                        params = params())
-    }
-  )
-  
   # enable/disable download based on password
   observeEvent(input$password, {
     if(input$password == password){
+      
+      # render report and download
+      output$download <- downloadHandler(
+        filename = function(){
+          paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.pdf')},
+        content = function(file) {
+          
+          # copy template to a temporary directory to avoid permissions issues 
+          tempReport = file.path(tempdir(), template_file)
+          file.copy(template_file, tempReport, overwrite = TRUE)
+          
+          # render report
+          rmarkdown::render(input = tempReport,
+                            output_file = file,
+                            params = params(),
+                            envir = new.env(parent = globalenv()))
+        }
+      )
+      
       shinyjs::show("download")
     } else {
       shinyjs::hide("download")
