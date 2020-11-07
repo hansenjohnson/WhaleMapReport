@@ -26,18 +26,14 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
                            choices = c('daily', 'daily-extended', 'weekly'), 
                            selected = 'daily',
                            multiple = FALSE),
-               passwordInput("password", "Password:"),
-               actionButton("check", 'Check password'),
-               # uiOutput("download")
-               # downloadButton("report", "Download report")
+               # passwordInput("password", "Password:"),
+               # actionButton("check", 'Check password'),
+               downloadButton("report", "Download report")
+               # uiOutput("download"),
+               
 )
 
 server = function(input, output) {
-  
-  # read in data
-  min_date = Sys.Date()-6
-  obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% filter(date>=min_date)
-  trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>% filter(date>=min_date)
   
   # # check password
   # observeEvent(input$check, {
@@ -70,7 +66,7 @@ server = function(input, output) {
       t1 = t2-d
       
       # read and subset data
-      obs = obs %>%
+      obs = readRDS('../WhaleMap/data/processed/observations.rds') %>%
         dplyr::filter(date >= t1 & date <= t2) %>%
         dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
         subset_canadian()
