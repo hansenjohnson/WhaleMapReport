@@ -35,6 +35,9 @@ ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
 
 server = function(input, output) {
   
+  min_date = Sys.Date()-7
+  obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% filter(date >= min_date)
+  
   # # check password
   # observeEvent(input$check, {
   #   
@@ -66,7 +69,7 @@ server = function(input, output) {
       t1 = t2-d
       
       # read and subset data
-      obs = readRDS('../WhaleMap/data/processed/observations.rds') %>%
+      obs = obs %>%
         dplyr::filter(date >= t1 & date <= t2) %>%
         dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
         subset_canadian()
