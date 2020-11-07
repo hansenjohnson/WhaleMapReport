@@ -4,6 +4,7 @@
 # setup -------------------------------------------------------------------
 
 library(shiny)
+library(shinyjs)
 library(tidyverse)
 
 # path to report template file (`dfo_summary-template.Rmd`)
@@ -17,45 +18,26 @@ load('password.rda')
 
 # app ---------------------------------------------------------------------
 
-ui = fluidPage(titlePanel(title = 'WhaleMap Summary Report'),
-               dateInput("date", label = 'Choose date:', 
-                         max = Sys.Date(), 
-                         value = Sys.Date()-1),
-               selectInput("type", 
-                           label = 'Choose report type:', 
-                           choices = c('daily', 'daily-extended', 'weekly'), 
-                           selected = 'daily',
-                           multiple = FALSE),
-               # passwordInput("password", "Password:"),
-               # actionButton("check", 'Check password'),
-               downloadButton("report", "Download report")
-               # uiOutput("download"),
-               
+ui = fluidPage(
+  shinyjs::useShinyjs(),
+  titlePanel(title = 'WhaleMap Summary Report'),
+  dateInput("date", label = 'Choose date:', 
+            max = Sys.Date(), 
+            value = Sys.Date()-1),
+  selectInput("type", 
+              label = 'Choose report type:', 
+              choices = c('daily', 'daily-extended', 'weekly'), 
+              selected = 'daily',
+              multiple = FALSE),
+  passwordInput("password", "Password:"),
+  shinyjs::hidden(downloadButton("download","Download report"))
 )
 
 server = function(input, output) {
   
-  min_date = Sys.Date()-7
-  obs = readRDS('../WhaleMap/data/processed/observations.rds') %>% filter(date >= min_date)
-  
-  # # check password
-  # observeEvent(input$check, {
-  #   
-  #   if(input$password == password){
-  #     showNotification('Password correct! You may now download the report :)', type = 'message')
-  #     output$download <- renderUI({downloadButton("report", "Download report")})
-  #   } else {
-  #     showNotification('Incorrect password. Please contact hansen.johnson@dal.ca for access', type = 'warning')
-  #   }
-  #   
-  # })
-  
-  # download
-  output$report <- downloadHandler(
-    # For PDF output, change this to "report.pdf"
-    # filename = "report.csv",
-    filename = paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.csv'),
-    
+  # render report and download
+  output$download <- downloadHandler(
+    filename = paste0(as.Date(input$date), '_WhaleMap_',input$type,'_summary.pdf'),
     content = function(file) {
       
       # define report duration
@@ -69,27 +51,34 @@ server = function(input, output) {
       t1 = t2-d
       
       # read and subset data
-      obs = obs %>%
+      obs = readRDS('../WhaleMap/data/processed/observations.rds') %>%
         dplyr::filter(date >= t1 & date <= t2) %>%
         dplyr::filter(score %in% c('definite acoustic', 'definite visual')) %>%
         subset_canadian()
+      trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>%
+        dplyr::filter(date >= t1 & date <= t2) %>%
+        subset_canadian()
       
-      write.csv(obs,file,row.names = FALSE)
-      # trk = readRDS('../WhaleMap/data/processed/tracks.rds') %>%
-      #   dplyr::filter(date >= t1 & date <= t2) %>%
-      #   subset_canadian()
-      
-      # # render report
-      # rmarkdown::render(input = tempReport, 
-      #                   output_file = file,
-      #                   params = list(
-      #                     t1 = t1,
-      #                     t2 = t2,
-      #                     obs = obs,
-      #                     trk = trk),
-      #                   envir = new.env(parent = globalenv()))
+      # render report
+      rmarkdown::render(input = template_file,
+                        output_file = file,
+                        params = list(
+                          t1 = t1,
+                          t2 = t2,
+                          obs = obs,
+                          trk = trk),
+                        envir = new.env(parent = globalenv()))
     }
   )
+  
+  # enable/disable download based on password
+  observeEvent(input$password, {
+    if(input$password == password){
+      shinyjs::show("download")
+    } else {
+      shinyjs::hide("download")
+    }
+  })
 }
 
 shinyApp(ui, server)
